@@ -228,7 +228,7 @@
             if (type === "ลาป่วย") { total = globalQuota.sickTotal; used = globalQuota.sickUsed; }
             else if (type === "ลากิจ") { total = globalQuota.personalTotal; used = globalQuota.personalUsed; }
             else if (type === "ลาพักร้อน") { total = globalQuota.vacationTotal; used = globalQuota.vacationUsed; }
-            document.getElementById("quotaLabel").innerText = `คงเหลือ ${total - used} วัน`;
+            document.getElementById("quotaLabel").innerText = `เลือกรูปแบบการลาของท่าน | คงเหลือ ${total - used} วัน`;
         }
 
         function calculateLeaveDays() {
