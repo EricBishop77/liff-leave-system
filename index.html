@@ -2,445 +2,509 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลาออนไลน์</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Sarabun', sans-serif; } </style>
-</head>
-<body class="bg-[#f4f6fa] text-slate-800 antialiased pb-24">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบยื่นใบลาออนไลน์</title>
 
-    <div id="loading" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
-        <div class="w-10 h-10 border-4 border-slate-200 border-t-[#1e40af] rounded-full animate-spin"></div>
-        <p class="mt-3 text-slate-400 text-xs">กำลังโหลดข้อมูลระบบ...</p>
-    </div>
-
-    <div id="registerPage" class="fixed inset-0 bg-[#f4f6fa] flex flex-col justify-between z-40 hidden">
-        <div class="bg-[#1e40af] text-white px-6 py-12 rounded-b-[2.5rem] shadow-md flex flex-col items-center text-center">
-            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-inner">🔑</div>
-            <h2 class="text-xl font-bold tracking-wide">ลงทะเบียนผูกบัญชี</h2>
-            <p class="text-xs text-blue-100 opacity-80 mt-1 max-w-xs">กรุณากรอกรหัสพนักงานและชื่อของคุณ เพื่อยืนยันและผูกสิทธิ์เข้าใช้งานระบบใบลาออนไลน์</p>
-        </div>
+    <!-- Tailwind CSS Standard CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        <main class="px-5 py-6 flex-1 max-w-md w-full mx-auto -mt-6">
-            <div class="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 space-y-4">
-                <form id="registerForm" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">รหัสพนักงาน</label>
-                        <input type="text" id="regEmpId" placeholder="ตัวอย่าง: EMP2026-001" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500 font-mono uppercase" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อ - นามสกุล (ภาษาไทย)</label>
-                        <input type="text" id="regName" placeholder="กรอกชื่อและนามสกุลจริง" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
-                    </div>
-                    <button type="submit" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-md transition text-sm mt-4">
-                        ยืนยันการผูกบัญชีไลน์
-                    </button>
-                </form>
-            </div>
-        </main>
-        <p class="text-center text-[11px] text-slate-400 pb-6">ระบบตรวจสอบข้อมูลพนักงานอัตโนมัติ</p>
-    </div>
+        /* Skeleton Animation เพื่อ Perceived Speed */
+        .skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.2s infinite;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 pb-20">
 
-    <div class="bg-[#1e40af] text-white px-5 py-4 flex items-center gap-3 shadow-sm">
-        <img id="userPicture" src="https://via.placeholder.com/150" alt="Avatar" class="w-12 h-12 rounded-2xl border border-white/20 object-cover bg-white">
-        <div>
-            <h1 class="text-xs text-blue-200 tracking-wide">ระบบยื่นคำขอลาออนไลน์</h1>
-            <p id="userName" class="text-sm font-semibold mt-0.5">กำลังโหลดชื่อ...</p>
-            <p id="userSubInfo" class="text-[11px] text-blue-100 opacity-90 mt-0.5">แผนก: - | ตำแหน่ง: -</p>
+<!-- 🌟 Skeleton Loading แสดงโครงร่างฟอร์มทันทีตอนเปิดแอป -->
+<div id="loading" class="fixed inset-0 bg-white flex flex-col z-50 p-4 space-y-4">
+    <div class="flex items-center gap-3 pt-2 pb-4">
+        <div class="w-12 h-12 rounded-2xl skeleton"></div>
+        <div class="space-y-2 flex-1">
+            <div class="h-3 w-1/3 skeleton rounded"></div>
+            <div class="h-4 w-2/3 skeleton rounded"></div>
         </div>
     </div>
+    <div class="bg-slate-50 p-5 rounded-2xl space-y-4">
+        <div class="h-4 w-1/4 skeleton rounded"></div>
+        <div class="h-10 w-full skeleton rounded-xl"></div>
+        <div class="h-4 w-1/3 skeleton rounded"></div>
+        <div class="h-10 w-full skeleton rounded-xl"></div>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="h-10 w-full skeleton rounded-xl"></div>
+            <div class="h-10 w-full skeleton rounded-xl"></div>
+        </div>
+        <div class="h-20 w-full skeleton rounded-xl"></div>
+        <div class="h-12 w-full skeleton rounded-xl mt-4"></div>
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-auto pb-4">กำลังเตรียมระบบและความปลอดภัย...</p>
+</div>
 
-    <main class="px-4 py-4 max-w-md mx-auto">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h2 class="text-base font-bold text-slate-800 mb-4">ยื่นใบลา</h2>
-            <form id="leaveForm" class="space-y-4">
+<!-- หน้าผูกบัญชีครั้งแรก -->
+<div id="registerPage" class="fixed inset-0 bg-[#f4f6fa] flex flex-col justify-between z-40 hidden">
+    <div class="bg-[#1e40af] text-white px-6 py-12 rounded-b-[2.5rem] shadow-md flex flex-col items-center text-center">
+        <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-inner">🔑</div>
+        <h2 class="text-xl font-bold tracking-wide">ลงทะเบียนผูกบัญชี</h2>
+        <p class="text-xs text-blue-100 opacity-80 mt-1 max-w-xs">กรุณากรอกรหัสพนักงานและชื่อของคุณ เพื่อยืนยันและผูกสิทธิ์เข้าใช้งานระบบใบลาออนไลน์</p>
+    </div>
+    
+    <main class="px-5 py-6 flex-1 max-w-md w-full mx-auto -mt-6">
+        <div class="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 space-y-4">
+            <form id="registerForm" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">ประเภทการลา</label>
-                    <select id="leaveType" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
-                        <option value="ลาป่วย">ลาป่วย</option>
-                        <option value="ลากิจ">ลากิจ</option>
-                        <option value="ลาพักร้อน">ลาพักร้อน</option>
-                    </select>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label id="quotaLabel" class="block text-xs font-medium text-slate-500">เลือกรูปแบบการลาของท่าน | คงเหลือ -- วัน</label>
-                    </div>
-                    <select id="leaveFormat" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
-                        <option value="เต็มวัน">เต็มวัน</option>
-                        <option value="ครึ่งวันเช้า">ครึ่งวันเช้า</option>
-                        <option value="ครึ่งวันบ่าย">ครึ่งวันบ่าย</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">วันเริ่ม</label>
-                        <input type="date" id="startDate" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">วันสิ้นสุด</label>
-                        <input type="date" id="endDate" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
-                    </div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">รหัสพนักงาน</label>
+                    <input type="text" id="regEmpId" placeholder="ตัวอย่าง: EMP2026-001" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500 font-mono uppercase" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">จำนวนวันลา (คำนวณอัตโนมัติ)</label>
-                    <input type="text" id="totalDays" placeholder="-" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-slate-100 text-right pr-4 text-slate-600 font-semibold" readonly required>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อ - นามสกุล (ภาษาไทย)</label>
+                    <input type="text" id="regName" placeholder="กรอกชื่อและนามสกุลจริง" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">เหตุผล</label>
-                    <textarea id="reason" rows="3" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required></textarea>
-                </div>
-                <button type="submit" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-sm transition text-sm mt-4">
-                    ส่งใบลาไปยังผู้อนุมัติ
+                <button type="submit" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-md transition text-sm mt-4">
+                    ยืนยันการผูกบัญชีไลน์
                 </button>
             </form>
         </div>
     </main>
+    <p class="text-center text-[11px] text-slate-400 pb-6">ระบบตรวจสอบข้อมูลพนักงานอัตโนมัติ</p>
+</div>
 
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-lg px-6 py-2 flex justify-between items-center max-w-md mx-auto z-40">
-        <button class="flex flex-col items-center gap-1 text-[#1e40af] flex-1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span class="text-[10px] font-medium">ยื่นคำขอ</span>
-        </button>
-        <button onclick="openHistoryModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-[#1e40af] flex-1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="text-[10px] font-medium">ประวัติการลา</span>
-        </button>
-        <button onclick="openQuotaModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-[#1e40af] flex-1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span class="text-[10px] font-medium">วันลาคงเหลือ</span>
-        </button>
+<!-- Header ส่วนบน -->
+<div class="bg-[#1e40af] text-white px-5 py-4 flex items-center gap-3 shadow-sm">
+    <img id="userPicture" src="https://via.placeholder.com/150" alt="Avatar" class="w-12 h-12 rounded-2xl border border-white/20 object-cover bg-white">
+    <div>
+        <h1 class="text-xs text-blue-200 tracking-wide">ระบบยื่นคำขอลาออนไลน์</h1>
+        <p id="userName" class="text-sm font-semibold mt-0.5">กำลังโหลดชื่อ...</p>
+        <p id="userSubInfo" class="text-[11px] text-blue-100 opacity-90 mt-0.5">แผนก: - | ตำแหน่ง: -</p>
     </div>
+</div>
 
-    <div id="historyModal" class="fixed inset-0 bg-black/50 flex flex-col justify-end z-50 hidden transition-all duration-300">
-        <div class="bg-white rounded-t-3xl max-w-md w-full mx-auto p-5 max-h-[80vh] flex flex-col shadow-2xl">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                <h3 class="text-base font-bold text-slate-800">ประวัติการลาของคุณ</h3>
-                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-xl">ปิด</button>
+<!-- ฟอร์มหลักยื่นใบลา -->
+<main class="px-4 py-4 max-w-md mx-auto">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h2 class="text-base font-bold text-slate-800 mb-4">ยื่นใบลา</h2>
+        <form id="leaveForm" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">ประเภทการลา</label>
+                <select id="leaveType" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
+                    <option value="ลาป่วย">ลาป่วย</option>
+                    <option value="ลากิจ">ลากิจ</option>
+                    <option value="ลาพักร้อน">ลาพักร้อน</option>
+                </select>
             </div>
-            <div id="historyList" class="overflow-y-auto py-3 space-y-3 flex-1 text-sm">
-                <p class="text-center text-slate-400 py-10">กำลังโหลดข้อมูลประวัติการลา...</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="quotaModal" class="fixed inset-0 bg-black/50 flex flex-col justify-end z-50 hidden transition-all duration-300">
-        <div class="bg-white rounded-t-3xl max-w-md w-full mx-auto p-5 max-h-[85vh] flex flex-col shadow-2xl">
-            <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                    <span class="text-xl">📊</span>
-                    <h3 class="text-base font-bold text-slate-800">สิทธิ์วันลาคงเหลือของคุณ</h3>
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label id="quotaLabel" class="block text-xs font-medium text-slate-500">เลือกรูปแบบการลาของท่าน | คงเหลือ -- วัน</label>
                 </div>
-                <button onclick="closeQuotaModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-xl">ปิด</button>
+                <select id="leaveFormat" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
+                    <option value="เต็มวัน">เต็มวัน</option>
+                    <option value="ครึ่งวันเช้า">ครึ่งวันเช้า</option>
+                    <option value="ครึ่งวันบ่าย">ครึ่งวันบ่าย</option>
+                </select>
             </div>
-            <div id="quotaContainer" class="overflow-y-auto py-4 space-y-4 flex-1 text-sm"></div>
-            <p class="text-center text-[10px] text-slate-400 mt-2">หมายเหตุ: ข้อมูลอัปเดตล่าสุดตามระบบฐานข้อมูล HR</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">วันเริ่ม</label>
+                    <input type="date" id="startDate" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">วันสิ้นสุด</label>
+                    <input type="date" id="endDate" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">จำนวนวันลา (คำนวณอัตโนมัติ)</label>
+                <input type="text" id="totalDays" placeholder="-" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-slate-100 text-right pr-4 text-slate-600 font-semibold" readonly required>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">เหตุผล</label>
+                <textarea id="reason" rows="3" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required></textarea>
+            </div>
+            <button type="submit" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-sm transition text-sm mt-4">
+                ส่งใบลาไปยังผู้อนุมัติ
+            </button>
+        </form>
+    </div>
+</main>
+
+<!-- Bottom Nav -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-lg px-6 py-2 flex justify-between items-center max-w-md mx-auto z-40">
+    <button class="flex flex-col items-center gap-1 text-[#1e40af] flex-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <span class="text-[10px] font-medium">ยื่นคำขอ</span>
+    </button>
+    <button onclick="openHistoryModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-[#1e40af] flex-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-[10px] font-medium">ประวัติการลา</span>
+    </button>
+    <button onclick="openQuotaModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-[#1e40af] flex-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span class="text-[10px] font-medium">วันลาคงเหลือ</span>
+    </button>
+</div>
+
+<!-- Modals -->
+<div id="historyModal" class="fixed inset-0 bg-black/50 flex flex-col justify-end z-50 hidden transition-all duration-300">
+    <div class="bg-white rounded-t-3xl max-w-md w-full mx-auto p-5 max-h-[80vh] flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-800">ประวัติการลาของคุณ</h3>
+            <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-xl">ปิด</button>
+        </div>
+        <div id="historyList" class="overflow-y-auto py-3 space-y-3 flex-1 text-sm">
+            <p class="text-center text-slate-400 py-10">กำลังโหลดข้อมูลประวัติการลา...</p>
         </div>
     </div>
+</div>
 
-    <script>
-        // ⚠️ อย่าลืมใส่ค่า CONFIG อันใหม่ล่าสุดของคุณตรงนี้ครับ
-        const LIFF_ID = "2010513192-BpcZHcRl"; 
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxqinmR7yLwV9cv99lxqaefe2--qhGnYH2vTeF1nc_A-EKQq-pbsitf2QQVPMxVNZK_/exec"; 
+<div id="quotaModal" class="fixed inset-0 bg-black/50 flex flex-col justify-end z-50 hidden transition-all duration-300">
+    <div class="bg-white rounded-t-3xl max-w-md w-full mx-auto p-5 max-h-[85vh] flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">📊</span>
+                <h3 class="text-base font-bold text-slate-800">สิทธิ์วันลาคงเหลือของคุณ</h3>
+            </div>
+            <button onclick="closeQuotaModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-xl">ปิด</button>
+        </div>
+        <div id="quotaContainer" class="overflow-y-auto py-4 space-y-4 flex-1 text-sm"></div>
+        <p class="text-center text-[10px] text-slate-400 mt-2">หมายเหตุ: ข้อมูลอัปเดตล่าสุดตามระบบฐานข้อมูล HR</p>
+    </div>
+</div>
 
-        let globalEmpId = "";
-        let globalQuota = {};
-        let lineProfileUserId = ""; // 🌟 ตัวแปรเก็บคู่หูไลน์ไอดีเพื่อใช้ผูกบัญชีครั้งแรก
+<script>
+    const LIFF_ID = "2010513192-BpcZHcRl"; 
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxqinmR7yLwV9cv99lxqaefe2--qhGnYH2vTeF1nc_A-EKQq-pbsitf2QQVPMxVNZK_/exec"; 
 
-        async function initLiff() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                } else {
-                    const profile = await liff.getProfile();
-                    document.getElementById("userPicture").src = profile.pictureUrl || "https://via.placeholder.com/150";
-                    fetchEmployeeData(profile.userId, profile.displayName);
+    let globalEmpId = "";
+    let globalQuota = {};
+    let lineProfileUserId = ""; 
+
+    async function initLiff() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                const profile = await liff.getProfile();
+                document.getElementById("userPicture").src = profile.pictureUrl || "https://via.placeholder.com/150";
+                
+                // โหลด Cache โปรไฟล์เพื่อแสดงผลทันทีก่อนยิง API จริง
+                const cachedProfile = localStorage.getItem("liff_user_profile");
+                if (cachedProfile) {
+                    try {
+                        const parsed = JSON.parse(cachedProfile);
+                        if (parsed.userId === profile.userId) {
+                            renderProfileUI(parsed.data);
+                        }
+                    } catch(e) {}
                 }
-            } catch (error) {
-                alert("LIFF Error: " + error);
+                
+                fetchEmployeeData(profile.userId, profile.displayName);
             }
+        } catch (error) {
+            alert("LIFF Error: " + error);
         }
+    }
 
-        function fetchEmployeeData(userId, displayName) {
-            lineProfileUserId = userId; // บันทึกค่าไอดีไลน์ลงหน่วยความจำชั่วคราว
-            
-            fetch(`${GAS_WEB_APP_URL}?action=getProfile&userId=${userId}`)
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById("loading").classList.add("hidden");
-                    if (data.status === "success") {
-                        // 🟢 พนักงานเก่า (มีข้อมูลอยู่แล้ว): สั่งซ่อนหน้าลงทะเบียน และเปิดสิทธิ์เข้าหน้าฟอร์มปกติ
-                        document.getElementById("registerPage").classList.add("hidden");
-                        
-                        globalEmpId = data.employee.empId;
-                        document.getElementById("userName").innerText = data.employee.name;
-                        document.getElementById("userSubInfo").innerText = `แผนก: ${data.employee.dept} | ตำแหน่ง: ${data.employee.position}`;
-                        globalQuota = data.quota;
-                        updateQuotaLabel("ลาป่วย");
-                    } else {
-                        // 🟡 พนักงานใหม่ (เข้าใช้งานครั้งแรก): สั่งดีดหน้าผูกบัญชีขึ้นมาบล็อกจอ
-                        document.getElementById("registerPage").classList.remove("hidden");
-                        document.getElementById("regName").value = displayName; // แอบใส่ชื่อไลน์ให้เบื้องต้นเพื่อความสะดวก
-                    }
-                })
-                .catch(err => {
-                    document.getElementById("loading").classList.add("hidden");
-                    alert("⚠️ เปิดแอปและดึงข้อมูลโปรไฟล์ไม่สำเร็จเนื่องจากติดปัญหาดึงสิทธิ์ (CORS/URL)");
-                });
-        }
+    function renderProfileUI(data) {
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("registerPage").classList.add("hidden");
+        globalEmpId = data.employee.empId;
+        document.getElementById("userName").innerText = data.employee.name;
+        document.getElementById("userSubInfo").innerText = `แผนก: ${data.employee.dept} | ตำแหน่ง: ${data.employee.position}`;
+        globalQuota = data.quota;
+        updateQuotaLabel(document.getElementById("leaveType").value || "ลาป่วย");
+    }
 
-        // 🔑 🌟 ปุ่มยืนยันระบบการผูกบัญชีไลน์ครั้งแรกลงฐานข้อมูล Sheets
-        document.getElementById("registerForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const inputEmpId = document.getElementById("regEmpId").value.trim();
-            const inputName = document.getElementById("regName").value.trim();
-            
-            if (!lineProfileUserId) return alert("ไม่พบรหัสสิทธิ์ไลน์ ไม่สามารถลงทะเบียนได้");
-            document.getElementById("loading").classList.remove("hidden");
-
-            // ยิงข้อมูลไปผูกความสัมพันธ์ผ่านเงื่อนไข "registerUser" หลังบ้าน
-            fetch(`${GAS_WEB_APP_URL}?action=registerUser&userId=${lineProfileUserId}&empId=${inputEmpId}&name=${encodeURIComponent(inputName)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        alert("🎉 ผูกบัญชีสำเร็จเรียบร้อยแล้ว!\nระบบทำการเชื่อมต่อบัญชีไลน์ของคุณเข้ากับระบบฐานข้อมูลหลักแล้วครับ");
-                        // ดึงข้อมูลใหม่อีกรอบเพื่อพาสิทธิ์วิ่งสลับเข้าสู่หน้าฟอร์มใบลาทันที
-                        fetchEmployeeData(lineProfileUserId, inputName);
-                    } else {
-                        document.getElementById("loading").classList.add("hidden");
-                        alert(data.message); // เด้งเตือน เช่น ไม่พบรหัสพนักงานนี้ในตาราง Sheets
-                    }
-                })
-                .catch(err => {
-                    document.getElementById("loading").classList.add("hidden");
-                    alert("❌ เชื่อมต่อระบบลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง");
-                });
-        });
-
-        function updateQuotaLabel(type) {
-            if (!globalQuota.sickTotal) return;
-            let total = 0, used = 0;
-            if (type === "ลาป่วย") { total = globalQuota.sickTotal; used = globalQuota.sickUsed; }
-            else if (type === "ลากิจ") { total = globalQuota.personalTotal; used = globalQuota.personalUsed; }
-            else if (type === "ลาพักร้อน") { total = globalQuota.vacationTotal; used = globalQuota.vacationUsed; }
-            document.getElementById("quotaLabel").innerText = `เลือกรูปแบบการลาของท่าน | คงเหลือ ${total - used} วัน`;
-        }
-
-        function calculateLeaveDays() {
-            const leaveFormat = document.getElementById("leaveFormat").value;
-            const startDateInput = document.getElementById("startDate").value;
-            const endDateInput = document.getElementById("endDate").value;
-            const totalDaysInput = document.getElementById("totalDays");
-
-            if (!startDateInput) return;
-
-            if (leaveFormat === "ครึ่งวันเช้า" || leaveFormat === "ครึ่งวันบ่าย") {
-                document.getElementById("endDate").value = startDateInput;
-                document.getElementById("endDate").readOnly = true; 
-                document.getElementById("endDate").classList.add("bg-slate-100");
-                totalDaysInput.value = "0.5 วัน";
-                return;
-            }
-
-            document.getElementById("endDate").disabled = false;
-            document.getElementById("endDate").readOnly = false; 
-            document.getElementById("endDate").classList.remove("bg-slate-100");
-
-            if (leaveFormat === "เต็มวัน" && totalDaysInput.value === "0.5 วัน") {
-                document.getElementById("endDate").value = "";
-                totalDaysInput.value = "";
-            }
-            
-            if (!endDateInput) return;
-
-            const start = new Date(startDateInput);
-            const end = new Date(endDateInput);
-            const timeDiff = end.getTime() - start.getTime();
-            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
-            if (daysDiff < 1) {
-                alert("⚠️ วันที่สิ้นสุดต้องไม่มาก่อนวันที่เริ่มต้นการลาครับ");
-                document.getElementById("endDate").value = "";
-                totalDaysInput.value = "";
-                return;
-            }
-            totalDaysInput.value = daysDiff + " วัน";
-        }
-
-        function openHistoryModal() {
-            if (!globalEmpId) return alert("ไม่สามารถดึงประวัติได้ เนื่องจากไม่พบรหัสพนักงาน");
-            
-            const modal = document.getElementById("historyModal");
-            modal.classList.remove("hidden");
-            const listContainer = document.getElementById("historyList");
-            listContainer.innerHTML = '<p class="text-center text-slate-400 py-10 animate-pulse">กำลังโหลดประวัติ...</p>';
-
-            fetch(`${GAS_WEB_APP_URL}?action=getHistory&empId=${globalEmpId}`)
-                .then(res => res.json())
-                .then(response => {
-                    if (response.status === "success" && response.data.length > 0) {
-                        listContainer.innerHTML = ""; 
-                        const formatDateTH = (dateStr) => {
-                            if (!dateStr) return "-";
-                            const d = new Date(dateStr);
-                            if (isNaN(d.getTime())) return dateStr.split("T")[0]; 
-                            const tzOffset = 7 * 60 * 60 * 1000; 
-                            const localDate = new Date(d.getTime() + tzOffset);
-                            return localDate.toISOString().split("T")[0];
-                        };
-
-                        response.data.forEach(item => {
-                            let statusColor = "bg-yellow-100 text-yellow-700";
-                            if (item.status === "อนุมัติแล้ว") statusColor = "bg-emerald-100 text-emerald-700";
-                            if (item.status === "ปฏิเสธ") statusColor = "bg-rose-100 text-rose-700";
-
-                            let sDate = formatDateTH(item.startDate);
-                            let eDate = formatDateTH(item.endDate);
-
-                            const card = `
-                                <div class="border border-slate-100 rounded-xl p-4 shadow-sm bg-slate-50">
-                                    <div class="flex justify-between items-start mb-1">
-                                        <div>
-                                            <span class="text-[10px] font-mono text-slate-400 block">${item.requestId}</span>
-                                            <span class="font-bold text-slate-700 text-sm">${item.leaveType} (${item.leaveFormat})</span>
-                                        </div>
-                                        <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColor}">${item.status}</span>
-                                    </div>
-                                    <div class="text-xs text-slate-500 space-y-0.5 mt-2">
-                                        <p>📅 วันที่ลา: ${sDate} ถึง ${eDate}</p>
-                                        <p>⏳ จำนวน: <span class="font-semibold text-slate-700">${item.totalDays} วัน</span></p>
-                                    </div>
-                                </div>
-                            `;
-                            listContainer.innerHTML += card;
-                        });
-                    } else {
-                        listContainer.innerHTML = '<p class="text-center text-slate-400 py-10">🌴 ยังไม่มีประวัติการลาในระบบ</p>';
-                    }
-                })
-                .catch(err => {
-                    listContainer.innerHTML = '<p class="text-center text-rose-500 py-10">❌ เกิดข้อผิดพลาดในการดึงข้อมูล</p>';
-                });
-        }
-
-        function closeHistoryModal() {
-            document.getElementById("historyModal").classList.add("hidden");
-        }
-
-        function openQuotaModal() {
-            if (!globalQuota || globalQuota.sickTotal === undefined) {
-                return alert("กำลังโหลดข้อมูลระบบ หรือไม่พบข้อมูลสิทธิ์วันลาของคุณ");
-            }
-            const modal = document.getElementById("quotaModal");
-            modal.classList.remove("hidden");
-            const container = document.getElementById("quotaContainer");
-            
-            let sickLeft = globalQuota.sickTotal - globalQuota.sickUsed;
-            let personalLeft = globalQuota.personalTotal - globalQuota.personalUsed;
-            let vacationLeft = globalQuota.vacationTotal - globalQuota.vacationUsed;
-
-            container.innerHTML = `
-                <div class="border border-red-100 rounded-2xl p-4 bg-gradient-to-br from-red-50/50 to-white shadow-sm">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-xl">🤒</div>
-                            <div>
-                                <h4 class="font-bold text-slate-700">ลาป่วย</h4>
-                                <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.sickUsed} / ทั้งหมด ${globalQuota.sickTotal} วัน</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xl font-bold text-red-600">${sickLeft}</span>
-                            <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="border border-amber-100 rounded-2xl p-4 bg-gradient-to-br from-amber-50/50 to-white shadow-sm">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl">💼</div>
-                            <div>
-                                <h4 class="font-bold text-slate-700">ลากิจ</h4>
-                                <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.personalUsed} / ทั้งหมด ${globalQuota.personalTotal} วัน</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xl font-bold text-amber-600">${personalLeft}</span>
-                            <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="border border-blue-100 rounded-2xl p-4 bg-gradient-to-br from-blue-50/50 to-white shadow-sm">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-xl">🌴</div>
-                            <div>
-                                <h4 class="font-bold text-slate-700">ลาพักร้อน</h4>
-                                <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.vacationUsed} / ทั้งหมด ${globalQuota.vacationTotal} วัน</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xl font-bold text-blue-600">${vacationLeft}</span>
-                            <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function closeQuotaModal() {
-            document.getElementById("quotaModal").classList.add("hidden");
-        }
-
-        document.getElementById("leaveFormat").addEventListener("change", calculateLeaveDays);
-        document.getElementById("startDate").addEventListener("change", calculateLeaveDays);
-        document.getElementById("endDate").addEventListener("change", calculateLeaveDays);
+    function fetchEmployeeData(userId, displayName) {
+        lineProfileUserId = userId; 
         
-        document.getElementById("leaveType").addEventListener("change", function() { 
-            updateQuotaLabel(this.value); 
-            calculateLeaveDays();
-        });
-
-        document.getElementById("leaveForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            if (!globalEmpId) return alert("ไม่สามารถทำรายการได้");
-            document.getElementById("loading").classList.remove("hidden");
-
-            const formData = {
-                action: "submitLeave",
-                empId: globalEmpId,
-                leaveType: document.getElementById("leaveType").value,
-                leaveFormat: document.getElementById("leaveFormat").value,
-                startDate: document.getElementById("startDate").value,
-                endDate: document.getElementById("endDate").value, 
-                totalDays: parseFloat(document.getElementById("totalDays").value.replace(" วัน", "")),
-                reason: document.getElementById("reason").value
-            };
-
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(formData)
-            })
-            .then(() => {
+        fetch(`${GAS_WEB_APP_URL}?action=getProfile&userId=${userId}`)
+            .then(res => res.json())
+            .then(data => {
                 document.getElementById("loading").classList.add("hidden");
-                alert("ส่งคำขอเรียบร้อยแล้ว!\nระบบกำลังบันทึกข้อมูลและแจ้งเตือนหัวหน้า...");
-                if (liff.isInClient()) liff.closeWindow();
+                if (data.status === "success") {
+                    // เก็บลง Cache ไว้ใช้รอบหน้า
+                    localStorage.setItem("liff_user_profile", JSON.stringify({ userId: userId, data: data }));
+                    renderProfileUI(data);
+                } else {
+                    document.getElementById("registerPage").classList.remove("hidden");
+                    document.getElementById("regName").value = displayName;
+                }
             })
             .catch(err => {
                 document.getElementById("loading").classList.add("hidden");
-                alert("ส่งคำขอสำเร็จเรียบร้อยแล้ว");
-                if (liff.isInClient()) liff.closeWindow();
             });
-        });
+    }
 
-        window.onload = initLiff;
-    </script>
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const inputEmpId = document.getElementById("regEmpId").value.trim();
+        const inputName = document.getElementById("regName").value.trim();
+        
+        if (!lineProfileUserId) return alert("ไม่พบรหัสสิทธิ์ไลน์ ไม่สามารถลงทะเบียนได้");
+        document.getElementById("loading").classList.remove("hidden");
+
+        fetch(`${GAS_WEB_APP_URL}?action=registerUser&userId=${lineProfileUserId}&empId=${inputEmpId}&name=${encodeURIComponent(inputName)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("🎉 ผูกบัญชีสำเร็จเรียบร้อยแล้ว!");
+                    fetchEmployeeData(lineProfileUserId, inputName);
+                } else {
+                    document.getElementById("loading").classList.add("hidden");
+                    alert(data.message);
+                }
+            })
+            .catch(err => {
+                document.getElementById("loading").classList.add("hidden");
+                alert("❌ เชื่อมต่อระบบลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง");
+            });
+    });
+
+    function updateQuotaLabel(type) {
+        if (!globalQuota.sickTotal) return;
+        let total = 0, used = 0;
+        if (type === "ลาป่วย") { total = globalQuota.sickTotal; used = globalQuota.sickUsed; }
+        else if (type === "ลากิจ") { total = globalQuota.personalTotal; used = globalQuota.personalUsed; }
+        else if (type === "ลาพักร้อน") { total = globalQuota.vacationTotal; used = globalQuota.vacationUsed; }
+        document.getElementById("quotaLabel").innerText = `เลือกรูปแบบการลาของท่าน | คงเหลือ ${total - used} วัน`;
+    }
+
+    function calculateLeaveDays() {
+        const leaveFormat = document.getElementById("leaveFormat").value;
+        const startDateInput = document.getElementById("startDate").value;
+        const endDateInput = document.getElementById("endDate").value;
+        const totalDaysInput = document.getElementById("totalDays");
+
+        if (!startDateInput) return;
+
+        if (leaveFormat === "ครึ่งวันเช้า" || leaveFormat === "ครึ่งวันบ่าย") {
+            document.getElementById("endDate").value = startDateInput;
+            document.getElementById("endDate").readOnly = true; 
+            document.getElementById("endDate").classList.add("bg-slate-100");
+            totalDaysInput.value = "0.5 วัน";
+            return;
+        }
+
+        document.getElementById("endDate").disabled = false;
+        document.getElementById("endDate").readOnly = false; 
+        document.getElementById("endDate").classList.remove("bg-slate-100");
+
+        if (leaveFormat === "เต็มวัน" && totalDaysInput.value === "0.5 วัน") {
+            document.getElementById("endDate").value = "";
+            totalDaysInput.value = "";
+        }
+        
+        if (!endDateInput) return;
+
+        const start = new Date(startDateInput);
+        const end = new Date(endDateInput);
+        const timeDiff = end.getTime() - start.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+        if (daysDiff < 1) {
+            alert("⚠️ วันที่สิ้นสุดต้องไม่มาก่อนวันที่เริ่มต้นการลาครับ");
+            document.getElementById("endDate").value = "";
+            totalDaysInput.value = "";
+            return;
+        }
+        totalDaysInput.value = daysDiff + " วัน";
+    }
+
+    function renderHistoryList(historyData) {
+        const listContainer = document.getElementById("historyList");
+        if (historyData && historyData.length > 0) {
+            listContainer.innerHTML = ""; 
+            const formatDateTH = (dateStr) => {
+                if (!dateStr) return "-";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr.split("T")[0]; 
+                const tzOffset = 7 * 60 * 60 * 1000; 
+                const localDate = new Date(d.getTime() + tzOffset);
+                return localDate.toISOString().split("T")[0];
+            };
+
+            historyData.forEach(item => {
+                let statusColor = "bg-yellow-100 text-yellow-700";
+                if (item.status === "อนุมัติแล้ว") statusColor = "bg-emerald-100 text-emerald-700";
+                if (item.status === "ปฏิเสธ") statusColor = "bg-rose-100 text-rose-700";
+
+                let sDate = formatDateTH(item.startDate);
+                let eDate = formatDateTH(item.endDate);
+
+                const card = `
+                    <div class="border border-slate-100 rounded-xl p-4 shadow-sm bg-slate-50">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <span class="text-[10px] font-mono text-slate-400 block">${item.requestId}</span>
+                                <span class="font-bold text-slate-700 text-sm">${item.leaveType} (${item.leaveFormat})</span>
+                            </div>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColor}">${item.status}</span>
+                        </div>
+                        <div class="text-xs text-slate-500 space-y-0.5 mt-2">
+                            <p>📅 วันที่ลา: ${sDate} ถึง ${eDate}</p>
+                            <p>⏳ จำนวน: <span class="font-semibold text-slate-700">${item.totalDays} วัน</span></p>
+                        </div>
+                    </div>
+                `;
+                listContainer.innerHTML += card;
+            });
+        } else {
+            listContainer.innerHTML = '<p class="text-center text-slate-400 py-10">🌴 ยังไม่มีประวัติการลาในระบบ</p>';
+        }
+    }
+
+    function openHistoryModal() {
+        if (!globalEmpId) return alert("ไม่สามารถดึงประวัติได้ เนื่องจากไม่พบรหัสพนักงาน");
+        
+        const modal = document.getElementById("historyModal");
+        modal.classList.remove("hidden");
+        
+        // อ่านจาก LocalStorage ก่อนเพื่อการแสดงผลทันที
+        const cachedHistory = localStorage.getItem(`liff_history_${globalEmpId}`);
+        if (cachedHistory) {
+            try {
+                renderHistoryList(JSON.parse(cachedHistory));
+            } catch(e) {}
+        } else {
+            document.getElementById("historyList").innerHTML = '<p class="text-center text-slate-400 py-10 animate-pulse">กำลังโหลดประวัติ...</p>';
+        }
+
+        fetch(`${GAS_WEB_APP_URL}?action=getHistory&empId=${globalEmpId}`)
+            .then(res => res.json())
+            .then(response => {
+                if (response.status === "success") {
+                    localStorage.setItem(`liff_history_${globalEmpId}`, JSON.stringify(response.data));
+                    renderHistoryList(response.data);
+                }
+            })
+            .catch(err => {});
+    }
+
+    function closeHistoryModal() {
+        document.getElementById("historyModal").classList.add("hidden");
+    }
+
+    function openQuotaModal() {
+        if (!globalQuota || globalQuota.sickTotal === undefined) {
+            return alert("กำลังโหลดข้อมูลระบบ หรือไม่พบข้อมูลสิทธิ์วันลาของคุณ");
+        }
+        const modal = document.getElementById("quotaModal");
+        modal.classList.remove("hidden");
+        const container = document.getElementById("quotaContainer");
+        
+        let sickLeft = globalQuota.sickTotal - globalQuota.sickUsed;
+        let personalLeft = globalQuota.personalTotal - globalQuota.personalUsed;
+        let vacationLeft = globalQuota.vacationTotal - globalQuota.vacationUsed;
+
+        container.innerHTML = `
+            <div class="border border-red-100 rounded-2xl p-4 bg-gradient-to-br from-red-50/50 to-white shadow-sm">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-xl">🤒</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700">ลาป่วย</h4>
+                            <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.sickUsed} / ทั้งหมด ${globalQuota.sickTotal} วัน</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xl font-bold text-red-600">${sickLeft}</span>
+                        <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border border-amber-100 rounded-2xl p-4 bg-gradient-to-br from-amber-50/50 to-white shadow-sm">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl">💼</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700">ลากิจ</h4>
+                            <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.personalUsed} / ทั้งหมด ${globalQuota.personalTotal} วัน</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xl font-bold text-amber-600">${personalLeft}</span>
+                        <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border border-blue-100 rounded-2xl p-4 bg-gradient-to-br from-blue-50/50 to-white shadow-sm">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-xl">🌴</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700">ลาพักร้อน</h4>
+                            <p class="text-[11px] text-slate-400">ใช้ไปแล้ว ${globalQuota.vacationUsed} / ทั้งหมด ${globalQuota.vacationTotal} วัน</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xl font-bold text-blue-600">${vacationLeft}</span>
+                        <span class="text-xs text-slate-400 block font-medium">วันคงเหลือ</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function closeQuotaModal() {
+        document.getElementById("quotaModal").classList.add("hidden");
+    }
+
+    document.getElementById("leaveFormat").addEventListener("change", calculateLeaveDays);
+    document.getElementById("startDate").addEventListener("change", calculateLeaveDays);
+    document.getElementById("endDate").addEventListener("change", calculateLeaveDays);
+    
+    document.getElementById("leaveType").addEventListener("change", function() { 
+        updateQuotaLabel(this.value); 
+        calculateLeaveDays();
+    });
+
+    document.getElementById("leaveForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        if (!globalEmpId) return alert("ไม่สามารถทำรายการได้");
+        document.getElementById("loading").classList.remove("hidden");
+
+        const formData = {
+            action: "submitLeave",
+            empId: globalEmpId,
+            leaveType: document.getElementById("leaveType").value,
+            leaveFormat: document.getElementById("leaveFormat").value,
+            startDate: document.getElementById("startDate").value,
+            endDate: document.getElementById("endDate").value, 
+            totalDays: parseFloat(document.getElementById("totalDays").value.replace(" วัน", "")),
+            reason: document.getElementById("reason").value
+        };
+
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(formData)
+        })
+        .then(() => {
+            // เคลียร์ Cache ประวัติเพื่อให้ดึงข้อมูลใหม่ครั้งหน้า
+            localStorage.removeItem(`liff_history_${globalEmpId}`);
+            document.getElementById("loading").classList.add("hidden");
+            alert("ส่งคำขอเรียบร้อยแล้ว!\nระบบกำลังบันทึกข้อมูลและแจ้งเตือนหัวหน้า...");
+            if (liff.isInClient()) liff.closeWindow();
+        })
+        .catch(err => {
+            document.getElementById("loading").classList.add("hidden");
+            alert("ส่งคำขอสำเร็จเรียบร้อยแล้ว");
+            if (liff.isInClient()) liff.closeWindow();
+        });
+    });
+
+    window.onload = initLiff;
+</script>
 </body>
 </html>
