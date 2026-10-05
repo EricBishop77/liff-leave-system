@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* Skeleton Animation เพื่อ Perceived Speed */
         .skeleton {
             background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
             background-size: 200% 100%;
@@ -26,7 +25,7 @@
 </head>
 <body class="bg-[#f8fafc] text-slate-800 pb-20">
 
-<!-- 🌟 Skeleton Loading แสดงโครงร่างฟอร์มทันทีตอนเปิดแอป -->
+<!-- 🌟 Skeleton Loading หน้าจอแรก -->
 <div id="loading" class="fixed inset-0 bg-white flex flex-col z-50 p-4 space-y-4">
     <div class="flex items-center gap-3 pt-2 pb-4">
         <div class="w-12 h-12 rounded-2xl skeleton"></div>
@@ -50,7 +49,7 @@
     <p class="text-center text-xs text-slate-400 mt-auto pb-4">กำลังเตรียมระบบและความปลอดภัย...</p>
 </div>
 
-<!-- หน้าผูกบัญชีครั้งแรก -->
+<!-- หน้าลงทะเบียนผูกบัญชีครั้งแรก -->
 <div id="registerPage" class="fixed inset-0 bg-[#f4f6fa] flex flex-col justify-between z-40 hidden">
     <div class="bg-[#1e40af] text-white px-6 py-12 rounded-b-[2.5rem] shadow-md flex flex-col items-center text-center">
         <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-inner">🔑</div>
@@ -136,7 +135,7 @@
     </div>
 </main>
 
-<!-- Bottom Nav -->
+<!-- Navigation Menu -->
 <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-lg px-6 py-2 flex justify-between items-center max-w-md mx-auto z-40">
     <button class="flex flex-col items-center gap-1 text-[#1e40af] flex-1">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -159,9 +158,7 @@
             <h3 class="text-base font-bold text-slate-800">ประวัติการลาของคุณ</h3>
             <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-xl">ปิด</button>
         </div>
-        <div id="historyList" class="overflow-y-auto py-3 space-y-3 flex-1 text-sm">
-            <p class="text-center text-slate-400 py-10">กำลังโหลดข้อมูลประวัติการลา...</p>
-        </div>
+        <div id="historyList" class="overflow-y-auto py-3 space-y-3 flex-1 text-sm"></div>
     </div>
 </div>
 
@@ -196,14 +193,12 @@
                 const profile = await liff.getProfile();
                 document.getElementById("userPicture").src = profile.pictureUrl || "https://via.placeholder.com/150";
                 
-                // โหลด Cache โปรไฟล์เพื่อแสดงผลทันทีก่อนยิง API จริง
+                // ⚡ ดึงจาก Local Storage มาวาด UI ล่วงหน้า
                 const cachedProfile = localStorage.getItem("liff_user_profile");
                 if (cachedProfile) {
                     try {
                         const parsed = JSON.parse(cachedProfile);
-                        if (parsed.userId === profile.userId) {
-                            renderProfileUI(parsed.data);
-                        }
+                        if (parsed.userId === profile.userId) renderProfileUI(parsed.data);
                     } catch(e) {}
                 }
                 
@@ -232,7 +227,6 @@
             .then(data => {
                 document.getElementById("loading").classList.add("hidden");
                 if (data.status === "success") {
-                    // เก็บลง Cache ไว้ใช้รอบหน้า
                     localStorage.setItem("liff_user_profile", JSON.stringify({ userId: userId, data: data }));
                     renderProfileUI(data);
                 } else {
@@ -320,60 +314,19 @@
         totalDaysInput.value = daysDiff + " วัน";
     }
 
-    function renderHistoryList(historyData) {
-        const listContainer = document.getElementById("historyList");
-        if (historyData && historyData.length > 0) {
-            listContainer.innerHTML = ""; 
-            const formatDateTH = (dateStr) => {
-                if (!dateStr) return "-";
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) return dateStr.split("T")[0]; 
-                const tzOffset = 7 * 60 * 60 * 1000; 
-                const localDate = new Date(d.getTime() + tzOffset);
-                return localDate.toISOString().split("T")[0];
-            };
-
-            historyData.forEach(item => {
-                let statusColor = "bg-yellow-100 text-yellow-700";
-                if (item.status === "อนุมัติแล้ว") statusColor = "bg-emerald-100 text-emerald-700";
-                if (item.status === "ปฏิเสธ") statusColor = "bg-rose-100 text-rose-700";
-
-                let sDate = formatDateTH(item.startDate);
-                let eDate = formatDateTH(item.endDate);
-
-                const card = `
-                    <div class="border border-slate-100 rounded-xl p-4 shadow-sm bg-slate-50">
-                        <div class="flex justify-between items-start mb-1">
-                            <div>
-                                <span class="text-[10px] font-mono text-slate-400 block">${item.requestId}</span>
-                                <span class="font-bold text-slate-700 text-sm">${item.leaveType} (${item.leaveFormat})</span>
-                            </div>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColor}">${item.status}</span>
-                        </div>
-                        <div class="text-xs text-slate-500 space-y-0.5 mt-2">
-                            <p>📅 วันที่ลา: ${sDate} ถึง ${eDate}</p>
-                            <p>⏳ จำนวน: <span class="font-semibold text-slate-700">${item.totalDays} วัน</span></p>
-                        </div>
-                    </div>
-                `;
-                listContainer.innerHTML += card;
-            });
-        } else {
-            listContainer.innerHTML = '<p class="text-center text-slate-400 py-10">🌴 ยังไม่มีประวัติการลาในระบบ</p>';
-        }
-    }
-
+    // ⚡ ฟังก์ชันดึงประวัติการลาพร้อม Cache แสดงผลทันที
     function openHistoryModal() {
         if (!globalEmpId) return alert("ไม่สามารถดึงประวัติได้ เนื่องจากไม่พบรหัสพนักงาน");
         
         const modal = document.getElementById("historyModal");
         modal.classList.remove("hidden");
         
-        // อ่านจาก LocalStorage ก่อนเพื่อการแสดงผลทันที
-        const cachedHistory = localStorage.getItem(`liff_history_${globalEmpId}`);
+        const cacheKey = `liff_history_${globalEmpId}`;
+        const cachedHistory = localStorage.getItem(cacheKey);
+
         if (cachedHistory) {
             try {
-                renderHistoryList(JSON.parse(cachedHistory));
+                renderHistoryUI(JSON.parse(cachedHistory));
             } catch(e) {}
         } else {
             document.getElementById("historyList").innerHTML = '<p class="text-center text-slate-400 py-10 animate-pulse">กำลังโหลดประวัติ...</p>';
@@ -382,12 +335,56 @@
         fetch(`${GAS_WEB_APP_URL}?action=getHistory&empId=${globalEmpId}`)
             .then(res => res.json())
             .then(response => {
-                if (response.status === "success") {
-                    localStorage.setItem(`liff_history_${globalEmpId}`, JSON.stringify(response.data));
-                    renderHistoryList(response.data);
+                if (response.status === "success" && response.data) {
+                    localStorage.setItem(cacheKey, JSON.stringify(response.data));
+                    renderHistoryUI(response.data);
                 }
             })
             .catch(err => {});
+    }
+
+    function renderHistoryUI(data) {
+        const listContainer = document.getElementById("historyList");
+        if (!data || data.length === 0) {
+            listContainer.innerHTML = '<p class="text-center text-slate-400 py-10">🌴 ยังไม่มีประวัติการลาในระบบ</p>';
+            return;
+        }
+
+        const formatDateTH = (dateStr) => {
+            if (!dateStr) return "-";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr.split("T")[0]; 
+            const tzOffset = 7 * 60 * 60 * 1000; 
+            const localDate = new Date(d.getTime() + tzOffset);
+            return localDate.toISOString().split("T")[0];
+        };
+
+        let html = "";
+        data.forEach(item => {
+            let statusColor = "bg-yellow-100 text-yellow-700";
+            if (item.status === "อนุมัติแล้ว") statusColor = "bg-emerald-100 text-emerald-700";
+            if (item.status === "ปฏิเสธ") statusColor = "bg-rose-100 text-rose-700";
+
+            let sDate = formatDateTH(item.startDate);
+            let eDate = formatDateTH(item.endDate);
+
+            html += `
+                <div class="border border-slate-100 rounded-xl p-4 shadow-sm bg-slate-50">
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <span class="text-[10px] font-mono text-slate-400 block">${item.requestId}</span>
+                            <span class="font-bold text-slate-700 text-sm">${item.leaveType} (${item.leaveFormat})</span>
+                        </div>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${statusColor}">${item.status}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 space-y-0.5 mt-2">
+                        <p>📅 วันที่ลา: ${sDate} ถึง ${eDate}</p>
+                        <p>⏳ จำนวน: <span class="font-semibold text-slate-700">${item.totalDays} วัน</span></p>
+                    </div>
+                </div>
+            `;
+        });
+        listContainer.innerHTML = html;
     }
 
     function closeHistoryModal() {
@@ -491,7 +488,7 @@
             body: JSON.stringify(formData)
         })
         .then(() => {
-            // เคลียร์ Cache ประวัติเพื่อให้ดึงข้อมูลใหม่ครั้งหน้า
+            // ⚡ ลบ Cache ประวัติเก่าเพื่อให้ครั้งต่อไปไปดึงข้อมูลที่อัปเดตแล้ว
             localStorage.removeItem(`liff_history_${globalEmpId}`);
             document.getElementById("loading").classList.add("hidden");
             alert("ส่งคำขอเรียบร้อยแล้ว!\nระบบกำลังบันทึกข้อมูลและแจ้งเตือนหัวหน้า...");
