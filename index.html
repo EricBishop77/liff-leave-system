@@ -176,6 +176,22 @@
     </div>
 </div>
 
+<!-- หน้าแจ้งเตือนบัญชีถูกระงับ (Inactive) -->
+<div id="inactivePage" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[100] hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+        <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-inner">
+            🚫
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">บัญชีผู้ใช้ถูกระงับ</h3>
+        <p id="inactiveMessage" class="text-xs text-slate-500 leading-relaxed">
+            พนักงานสถานะ Inactive ไม่สามารถทำรายการยื่นใบลาในระบบได้ กรุณาติดต่อฝ่ายบุคคล (HR)
+        </p>
+        <button onclick="liff.closeWindow()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition active:scale-95">
+            ปิดหน้านี้
+        </button>
+    </div>
+</div>
+
 <script>
     const LIFF_ID = "2010513192-BpcZHcRl"; 
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxqinmR7yLwV9cv99lxqaefe2--qhGnYH2vTeF1nc_A-EKQq-pbsitf2QQVPMxVNZK_/exec"; 
@@ -217,12 +233,10 @@
         document.getElementById("userSubInfo").innerText = `แผนก: ${data.employee.dept} | ตำแหน่ง: ${data.employee.position}`;
         globalQuota = data.quota;
 
-        // 🌟 ตรวจสอบโควตา และ Disable ตัวเลือกที่สิทธิ์หมดทันทีเมื่อโหลดข้อมูลโปรไฟล์สำเร็จ
         checkQuotaAndDisableOptions();
         updateQuotaLabel(document.getElementById("leaveType").value);
     }
 
-    // ⚡ ฟังก์ชันใหม่: ตรวจสอบวันลาคงเหลือเพื่อ Disable Option ที่สิทธิ์หมด
     function checkQuotaAndDisableOptions() {
         if (!globalQuota || globalQuota.sickTotal === undefined) return;
 
@@ -262,7 +276,6 @@
             }
         }
 
-        // หากประเภทที่เลือกอยู่ในปัจจุบันโดน Disable ให้สลับไปเลือกอันแรกที่ยังเปิดใช้อยู่
         if (leaveSelect.selectedOptions[0] && leaveSelect.selectedOptions[0].disabled) {
             for (let i = 0; i < options.length; i++) {
                 if (!options[i].disabled) {
@@ -273,6 +286,7 @@
         }
     }
 
+    // ⚡ [จุดแก้ไขสำคัญ] เพิ่มการเช็คสถานะ inactive ดักไว้ทันที
     function fetchEmployeeData(userId, displayName) {
         lineProfileUserId = userId; 
         
@@ -280,6 +294,17 @@
             .then(res => res.json())
             .then(data => {
                 document.getElementById("loading").classList.add("hidden");
+
+                // หากบัญชีสถานะ Inactive ให้ล้าง Cache และแสดงป๊อปอัปแจ้งเตือนทันที
+                if (data.status === "inactive") {
+                    localStorage.removeItem("liff_user_profile");
+                    if (data.message) {
+                        document.getElementById("inactiveMessage").innerText = data.message;
+                    }
+                    document.getElementById("inactivePage").classList.remove("hidden");
+                    return;
+                }
+
                 if (data.status === "success") {
                     localStorage.setItem("liff_user_profile", JSON.stringify({ userId: userId, data: data }));
                     renderProfileUI(data);
