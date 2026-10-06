@@ -128,8 +128,16 @@
                 <label class="block text-xs font-medium text-slate-500 mb-1">เหตุผล</label>
                 <textarea id="reason" rows="3" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white focus:outline-none focus:border-blue-500" required></textarea>
             </div>
-            <button type="submit" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-sm transition text-sm mt-4">
-                ส่งใบลาไปยังผู้อนุมัติ
+            
+            <!-- ⚡ [จุดเพิ่มที่ 1] เพิ่มช่องแนบไฟล์รูปภาพ หรือ เอกสาร PDF -->
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">แนบเอกสาร / ใบรับรองแพทย์ (ถ้ามี)</label>
+                <input type="file" id="attachment" accept="image/*,.pdf" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs bg-slate-50 text-slate-600 focus:outline-none focus:border-blue-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-[10px] text-slate-400 mt-1">รองรับไฟล์รูปภาพ (JPG, PNG) หรือไฟล์ PDF (ขนาดไม่เกิน 5MB)</p>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-sm transition text-sm mt-4 flex items-center justify-center gap-2">
+                <span>ส่งใบลาไปยังผู้อนุมัติ</span>
             </button>
         </form>
     </div>
@@ -209,7 +217,6 @@
                 const profile = await liff.getProfile();
                 document.getElementById("userPicture").src = profile.pictureUrl || "https://via.placeholder.com/150";
                 
-                // โหลด Cache โปรไฟล์เพื่อแสดงผลทันที
                 const cachedProfile = localStorage.getItem("liff_user_profile");
                 if (cachedProfile) {
                     try {
@@ -286,7 +293,6 @@
         }
     }
 
-    // ⚡ [จุดแก้ไขสำคัญ] เพิ่มการเช็คสถานะ inactive ดักไว้ทันที
     function fetchEmployeeData(userId, displayName) {
         lineProfileUserId = userId; 
         
@@ -295,7 +301,6 @@
             .then(data => {
                 document.getElementById("loading").classList.add("hidden");
 
-                // หากบัญชีสถานะ Inactive ให้ล้าง Cache และแสดงป๊อปอัปแจ้งเตือนทันที
                 if (data.status === "inactive") {
                     localStorage.removeItem("liff_user_profile");
                     if (data.message) {
@@ -423,6 +428,7 @@
             .catch(err => {});
     }
 
+    // ⚡ [จุดเพิ่มที่ 2] แสดงลิงก์ปุ่ม "เปิดดูเอกสารแนบ" ในรายการประวัติการลา
     function renderHistoryUI(data) {
         const listContainer = document.getElementById("historyList");
         if (!data || data.length === 0) {
@@ -448,6 +454,17 @@
             let sDate = formatDateTH(item.startDate);
             let eDate = formatDateTH(item.endDate);
 
+            let attachmentHtml = "";
+            if (item.attachmentUrl) {
+                attachmentHtml = `
+                    <div class="mt-2 pt-2 border-t border-slate-200/60">
+                        <a href="${item.attachmentUrl}" target="_blank" class="inline-flex items-center text-xs text-blue-600 hover:underline font-medium">
+                            📎 เปิดดูเอกสารแนบประกอบ
+                        </a>
+                    </div>
+                `;
+            }
+
             html += `
                 <div class="border border-slate-100 rounded-xl p-4 shadow-sm bg-slate-50">
                     <div class="flex justify-between items-start mb-1">
@@ -461,6 +478,7 @@
                         <p>📅 วันที่ลา: ${sDate} ถึง ${eDate}</p>
                         <p>⏳ จำนวน: <span class="font-semibold text-slate-700">${item.totalDays} วัน</span></p>
                     </div>
+                    ${attachmentHtml}
                 </div>
             `;
         });
@@ -545,10 +563,42 @@
         calculateLeaveDays();
     });
 
-    document.getElementById("leaveForm").addEventListener("submit", function(e) {
+    // ⚡ [จุดเพิ่มที่ 3] ฟังก์ชันแปลงไฟล์เป็น Base64
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ⚡ [จุดเพิ่มที่ 4] อัปเดตการส่งฟอร์มเพื่ออ่านไฟล์และส่งไปที่ GAS
+    document.getElementById("leaveForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         if (!globalEmpId) return alert("ไม่สามารถทำรายการได้");
-        document.getElementById("loading").classList.remove("hidden");
+
+        const fileInput = document.getElementById("attachment");
+        let fileData = "";
+        let fileName = "";
+
+        // ตรวจสอบไฟล์และขนาดไฟล์
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            if (file.size > 5 * 1024 * 1024) { // จำกัดขนาด 5MB
+                return alert("⚠️ ขนาดไฟล์แนบใหญ่เกินไป กรุณาใช้ไฟล์ขนาดไม่เกิน 5MB ครับ");
+            }
+            try {
+                document.getElementById("loading").classList.remove("hidden");
+                fileData = await readFileAsBase64(file);
+                fileName = file.name;
+            } catch(err) {
+                document.getElementById("loading").classList.add("hidden");
+                return alert("❌ ไม่สามารถอ่านไฟล์ได้ กรุณาลองแนบใหม่อีกครั้ง");
+            }
+        } else {
+            document.getElementById("loading").classList.remove("hidden");
+        }
 
         const formData = {
             action: "submitLeave",
@@ -558,7 +608,9 @@
             startDate: document.getElementById("startDate").value,
             endDate: document.getElementById("endDate").value, 
             totalDays: parseFloat(document.getElementById("totalDays").value.replace(" วัน", "")),
-            reason: document.getElementById("reason").value
+            reason: document.getElementById("reason").value,
+            fileData: fileData,  // ส่ง Base64 ของไฟล์
+            fileName: fileName   // ส่งชื่อไฟล์
         };
 
         fetch(GAS_WEB_APP_URL, {
