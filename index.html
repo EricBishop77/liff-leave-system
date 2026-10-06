@@ -209,7 +209,6 @@
                 const profile = await liff.getProfile();
                 document.getElementById("userPicture").src = profile.pictureUrl || "https://via.placeholder.com/150";
                 
-                // โหลด Cache โปรไฟล์เพื่อแสดงผลทันที
                 const cachedProfile = localStorage.getItem("liff_user_profile");
                 if (cachedProfile) {
                     try {
@@ -286,7 +285,6 @@
         }
     }
 
-    // ⚡ [จุดแก้ไขสำคัญ] เพิ่มการเช็คสถานะ inactive ดักไว้ทันที
     function fetchEmployeeData(userId, displayName) {
         lineProfileUserId = userId; 
         
@@ -295,7 +293,6 @@
             .then(data => {
                 document.getElementById("loading").classList.add("hidden");
 
-                // หากบัญชีสถานะ Inactive ให้ล้าง Cache และแสดงป๊อปอัปแจ้งเตือนทันที
                 if (data.status === "inactive") {
                     localStorage.removeItem("liff_user_profile");
                     if (data.message) {
