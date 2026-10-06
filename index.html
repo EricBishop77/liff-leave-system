@@ -1004,21 +1004,34 @@
     }
 
     /**
-     * แปลงวันที่ YYYY-MM-DD เป็น วันที่ภาษาไทย พ.ศ. (เช่น 1 ต.ค. 2569)
+     * แปลงวันที่เป็น วันที่ภาษาไทย พ.ศ. พร้อมชดเชย Timezone UTC -> GMT+7 ป้องกันวันที่ถอยหลัง 1 วัน
      */
     function formatThaiDate(dateInput) {
         if (!dateInput) return "-";
-        const str = String(dateInput).split("T")[0].replace(/[📅\s]/g, "").trim();
-        const match = str.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-        if (match) {
-            const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-            const y = parseInt(match[1], 10);
-            const m = parseInt(match[2], 10) - 1;
-            const d = parseInt(match[3], 10);
-            const thaiYear = y < 2400 ? (y + 543) : y;
-            return `${d} ${thaiMonths[m] || ""} ${thaiYear}`;
+        
+        let d;
+        const strInput = String(dateInput).trim();
+
+        // กรณีเป็น ISO Timestamp จาก Google Apps Script (เช่น 2026-09-30T17:00:00.000Z)
+        if (strInput.includes("T")) {
+            d = new Date(strInput);
+        } else if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(strInput)) {
+            // กรณีเป็น YYYY-MM-DD แบบไม่มีเวลา ให้สร้างเป็น Local Date โดยตรง
+            const parts = strInput.split(/[-/]/);
+            d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+            d = new Date(strInput);
         }
-        return str;
+
+        if (isNaN(d.getTime())) return strInput;
+
+        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        const day = d.getDate();
+        const month = thaiMonths[d.getMonth()] || "";
+        const rawYear = d.getFullYear();
+        const thaiYear = rawYear < 2400 ? rawYear + 543 : rawYear;
+
+        return `${day} ${month} ${thaiYear}`;
     }
 
     function renderHistoryCards(items) {
