@@ -576,16 +576,16 @@
     // ⚡ [จุดเพิ่มที่ 4] อัปเดตการส่งฟอร์มเพื่ออ่านไฟล์และส่งไปที่ GAS
     document.getElementById("leaveForm").addEventListener("submit", async function(e) {
         e.preventDefault();
-        if (!globalEmpId) return alert("ไม่สามารถทำรายการได้");
+        if (!globalEmpId) return alert("ไม่สามารถทำรายการได้ เนื่องจากไม่พบรหัสพนักงาน");
 
         const fileInput = document.getElementById("attachment");
         let fileData = "";
         let fileName = "";
 
-        // ตรวจสอบไฟล์และขนาดไฟล์
+        // ตรวจสอบไฟล์แนบ
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
-            if (file.size > 5 * 1024 * 1024) { // จำกัดขนาด 5MB
+            if (file.size > 5 * 1024 * 1024) { // จำกัดขนาดไฟล์ไม่เกิน 5MB
                 return alert("⚠️ ขนาดไฟล์แนบใหญ่เกินไป กรุณาใช้ไฟล์ขนาดไม่เกิน 5MB ครับ");
             }
             try {
@@ -609,20 +609,21 @@
             endDate: document.getElementById("endDate").value, 
             totalDays: parseFloat(document.getElementById("totalDays").value.replace(" วัน", "")),
             reason: document.getElementById("reason").value,
-            fileData: fileData,  // ส่ง Base64 ของไฟล์
-            fileName: fileName   // ส่งชื่อไฟล์
+            fileData: fileData,  
+            fileName: fileName   
         };
 
+        // ส่งแบบ text/plain เพื่อป้องกันปัญหา CORS Preflight ใน GAS
         fetch(GAS_WEB_APP_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify(formData)
         })
         .then(() => {
             localStorage.removeItem(`liff_history_${globalEmpId}`);
             document.getElementById("loading").classList.add("hidden");
-            alert("ส่งคำขอเรียบร้อยแล้ว!\nระบบกำลังบันทึกข้อมูลและแจ้งเตือนหัวหน้า...");
+            alert("🎉 ส่งคำขอและอัปโหลดเอกสารเรียบร้อยแล้ว!");
             if (liff.isInClient()) liff.closeWindow();
         })
         .catch(err => {
